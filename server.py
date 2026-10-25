@@ -21,6 +21,8 @@ from engine import (
 from imagefx import IMAGEFX_ID, ImageFxCredentialRequest
 from leonardo import LEONARDO_ID, LeonardoCredentialRequest
 from recraft import RECRAFT_ID, RecraftCredentialRequest
+from seaart import SEAART_ID, SeaArtBackend
+from whisk import WHISK_ID, WhiskCredentialRequest
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
@@ -496,6 +498,8 @@ def create_app(settings: Settings | None = None, backend_factory=None) -> FastAP
                 engine.imagefx.public(),
                 engine.recraft.public(),
                 engine.leonardo.public(),
+                engine.seaart.public(),
+                engine.whisk.public(),
             ]
         }
 
@@ -536,6 +540,20 @@ def create_app(settings: Settings | None = None, backend_factory=None) -> FastAP
             except ValueError as exc:
                 raise GatewayError("invalid_leonardo_credential", str(exc), 422) from None
             return engine.leonardo.save(value)
+        if provider == SEAART_ID:
+            # SeaArt needs a token plus the account's model_no.  Accept the
+            # JSON string used by the local UI, or a JSON object for callers
+            # that invoke this local management endpoint directly.
+            value = body.get("credential", body)
+            return engine.seaart.save(value)
+        if provider == WHISK_ID:
+            try:
+                value = WhiskCredentialRequest(
+                    credential=body.get("credential", body.get("token"))
+                ).credential
+            except ValueError as exc:
+                raise GatewayError("invalid_whisk_credential", str(exc), 422) from None
+            return engine.whisk.save(value)
         raise GatewayError("provider_not_found", "没有此网页图片平台。", 404)
 
     @app.delete("/api/web-image-providers/{provider}")
@@ -549,7 +567,18 @@ def create_app(settings: Settings | None = None, backend_factory=None) -> FastAP
             return engine.recraft.clear()
         if provider == LEONARDO_ID:
             return engine.leonardo.clear()
+        if provider == SEAART_ID:
+            return engine.seaart.clear()
+        if provider == WHISK_ID:
+            return engine.whisk.clear()
         raise GatewayError("provider_not_found", "没有此网页图片平台。", 404)
+
+    @app.get("/api/web-image-providers/{provider}/credits")
+    async def web_image_provider_credits(provider: str, request: Request):
+        engine = service(request)
+        if provider != SEAART_ID:
+            raise GatewayError("credits_unsupported", "此网页图片平台没有额度查询接口。", 404)
+        return await SeaArtBackend(engine.seaart.config(), engine.settings.timeout).credits()
 
     @app.get("/api/video-providers")
     async def video_providers(request: Request):
@@ -707,6 +736,25 @@ def create_app(settings: Settings | None = None, backend_factory=None) -> FastAP
                 }
                 for model_id in info["models"]
             ]
+        if provider == SEAART_ID:
+            info = service(request).seaart.public()
+            if not info["configured"]:
+                raise GatewayError(
+                    "provider_not_configured",
+                    "请先在网页额度与平台连接中填写 SeaArt Token + model_no JSON。",
+                    409,
+                )
+            return [
+                {
+                    "id": model_id,
+                    "object": "model",
+                    "created": 0,
+                    "owned_by": SEAART_ID,
+                    "display_name": model_id,
+                    "available": True,
+                }
+                for model_id in info["models"]
+            ]
         if provider == IMAGEFX_ID:
             info = service(request).imagefx.public()
             if not info["configured"]:
@@ -721,6 +769,25 @@ def create_app(settings: Settings | None = None, backend_factory=None) -> FastAP
                     "object": "model",
                     "created": 0,
                     "owned_by": IMAGEFX_ID,
+                    "display_name": model_id,
+                    "available": True,
+                }
+                for model_id in info["models"]
+            ]
+        if provider == WHISK_ID:
+            info = service(request).whisk.public()
+            if not info["configured"]:
+                raise GatewayError(
+                    "provider_not_configured",
+                    "请先在网页额度与平台连接中填写 Google Labs Whisk Cookie。",
+                    409,
+                )
+            return [
+                {
+                    "id": model_id,
+                    "object": "model",
+                    "created": 0,
+                    "owned_by": WHISK_ID,
                     "display_name": model_id,
                     "available": True,
                 }
@@ -867,6 +934,8 @@ def create_app(settings: Settings | None = None, backend_factory=None) -> FastAP
                         engine.imagefx.public(),
                         engine.recraft.public(),
                         engine.leonardo.public(),
+                        engine.seaart.public(),
+                        engine.whisk.public(),
                     ]
                 ],
                 *[

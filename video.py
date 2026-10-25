@@ -479,7 +479,9 @@ VIDEO_PROVIDERS = {
         "capabilities": "无需账号的 Sana 文生图公共入口；不支持本地参考图",
         "fit": "免费低成本图片兜底",
         "api_free_note": (
-            "当前未认证公共接口稳定提供 Sana；共享服务可能限流、排队或临时不可用。"
+            "当前旧版未认证公共接口稳定提供 Sana；共享服务可能限流、排队或临时不可用。"
+            "Pollinations 新版 gen.pollinations.ai 即使模型目录标记 paid_only=false，实际调用仍要求有效 API Key，"
+            "并按 Pollen 计价，因此本连接器不会把新版模型或 Pollen 余额当成免费，也不会自动切换到新版接口。"
             "指定其他高级模型不会被伪装成免费，参考图需要选择支持图生图的平台。"
         ),
         "docs_url": "https://pollinations.ai/",
@@ -1143,6 +1145,12 @@ class PollinationsImageBackend:
         except urllib.error.HTTPError as exc:
             if exc.code == 429:
                 raise GatewayError("pollinations_rate_limited", "Pollinations 公共接口当前限流，请稍后重试。", 429) from None
+            if exc.code in {401, 403}:
+                raise GatewayError(
+                    "pollinations_auth_required",
+                    "Pollinations 新版接口需要 API Key；本地免费连接器只使用旧版匿名 Sana 入口，未提交付费请求。",
+                    401,
+                ) from None
             raise GatewayError("pollinations_upstream_error", f"Pollinations 请求失败（HTTP {exc.code}）。", 502) from None
         except (urllib.error.URLError, TimeoutError, OSError):
             raise GatewayError("pollinations_network_error", "Pollinations 公共接口暂时无法连接。", 502) from None
@@ -1516,6 +1524,7 @@ class ViduWebVideoBackend(_HTTPBackend):
     def _headers(self, extra: dict | None = None, cookie: bool = True) -> dict:
         headers = {
             "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
             "Origin": self.ORIGIN,
             "Referer": self.ORIGIN + "/",
             "X-Platform": "web",
@@ -1536,6 +1545,12 @@ class ViduWebVideoBackend(_HTTPBackend):
             raise GatewayError("video_invalid_url", "Vidu 网页请求地址不受支持。", 502)
         body = None
         request_headers = self._headers(headers)
+        # The first-party web client adds a request ID to mutating requests.
+        # It is an ordinary correlation header, not a signature or challenge
+        # token, and helps the service correlate retries without changing the
+        # account or quota semantics.
+        if method.upper() in {"POST", "PATCH"}:
+            request_headers.setdefault("X-Request-Id", str(uuid.uuid4()))
         if payload is not None:
             body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
             request_headers["Content-Type"] = "application/json"

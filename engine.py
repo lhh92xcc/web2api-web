@@ -49,6 +49,8 @@ from recraft import (
     RecraftBackend,
     RecraftConfigStore,
 )
+from seaart import SEAART_ID, SeaArtBackend, SeaArtConfigStore
+from whisk import WHISK_ID, WhiskBackend, WhiskConfigStore, WHISK_MODELS
 from references import ReferenceStore
 from schemas import (
     BatchRequest,
@@ -635,6 +637,8 @@ class JobService:
         self.imagefx = ImageFxConfigStore(settings.state_dir)
         self.recraft = RecraftConfigStore(settings.state_dir)
         self.leonardo = LeonardoConfigStore(settings.state_dir)
+        self.seaart = SeaArtConfigStore(settings.state_dir)
+        self.whisk = WhiskConfigStore(settings.state_dir)
         self.bridge = BrowserBridge(
             settings.state_dir, self.providers, settings.timeout
         )
@@ -812,6 +816,8 @@ class JobService:
                 self.imagefx.public(),
                 self.recraft.public(),
                 self.leonardo.public(),
+                self.seaart.public(),
+                self.whisk.public(),
             ],
             "video_providers": [
                 {
@@ -1255,6 +1261,54 @@ class JobService:
             if request.model != "default" and request.model not in LEONARDO_MODELS:
                 raise GatewayError("invalid_model", "Leonardo 图片模型不在网页模型列表中。", 422)
             return
+        if request.provider == SEAART_ID:
+            if not isinstance(request, ImageRequest):
+                raise GatewayError(
+                    "unsupported_capability",
+                    "SeaArt 网页连接只支持图片生成。",
+                    422,
+                )
+            if ready and not self.seaart.configured:
+                raise GatewayError(
+                    "seaart_not_configured",
+                    "请先在网页额度与平台连接中填写 SeaArt Token + model_no JSON。",
+                    409,
+                )
+            if request.model != "default":
+                raise GatewayError(
+                    "invalid_model",
+                    "SeaArt 模型 ID 在本机凭据 JSON 的 model_no 字段中配置，请传 model: default。",
+                    422,
+                )
+            if len(request.reference_images) > 1:
+                raise GatewayError(
+                    "reference_count",
+                    "SeaArt 网页图生图当前最多使用 1 张参考图。",
+                    422,
+                )
+            return
+        if request.provider == WHISK_ID:
+            if not isinstance(request, ImageRequest):
+                raise GatewayError(
+                    "unsupported_capability",
+                    "Whisk 网页连接只支持图片生成。",
+                    422,
+                )
+            if ready and not self.whisk.configured:
+                raise GatewayError(
+                    "whisk_not_configured",
+                    "请先在网页额度与平台连接中填写 Google Labs Whisk Cookie。",
+                    409,
+                )
+            if request.model != "default" and request.model not in WHISK_MODELS:
+                raise GatewayError("invalid_model", "Whisk 图片模型不在网页模型列表中。", 422)
+            if len(request.reference_images) > 3:
+                raise GatewayError(
+                    "reference_count",
+                    "Whisk 网页图生图当前最多使用 3 张参考图。",
+                    422,
+                )
+            return
         if request.provider == "gemini":
             if ready:
                 self.require_configured()
@@ -1611,7 +1665,7 @@ class JobService:
                 reference_paths = self.references.paths(
                     request.reference_images, job.get("owner_id")
                 )
-                native_image = request.provider in {"gemini", "bing", "jimeng-web", "tongyi-web", "hailuo-web", DOUBAO_ID, IMAGEFX_ID, RECRAFT_ID, LEONARDO_ID, PUTER_ID, POLLINATIONS_ID} and not isinstance(
+                native_image = request.provider in {"gemini", "bing", "jimeng-web", "tongyi-web", "hailuo-web", DOUBAO_ID, IMAGEFX_ID, RECRAFT_ID, LEONARDO_ID, SEAART_ID, WHISK_ID, PUTER_ID, POLLINATIONS_ID} and not isinstance(
                     request, VideoRequest
                 )
                 if not native_image and not isinstance(request, VideoRequest):
@@ -1733,6 +1787,14 @@ class JobService:
                             self.leonardo.credential, self.settings.timeout
                         ).generate(request, folder, remaining, reference_paths)
                         if request.provider == LEONARDO_ID
+                        else await SeaArtBackend(
+                            self.seaart.config(), self.settings.timeout
+                        ).generate_image(request, folder, reference_paths)
+                        if request.provider == SEAART_ID
+                        else await WhiskBackend(
+                            self.whisk.credential, self.settings.timeout
+                        ).generate(request, folder, remaining, reference_paths)
+                        if request.provider == WHISK_ID
                         else await video_backend_for(
                             self.video, request.provider, self.settings.timeout
                         ).generate_image(request, folder, reference_paths)

@@ -307,6 +307,8 @@ def register_bridge(app: FastAPI, get_service):
             engine.imagefx.public(),
             engine.recraft.public(),
             engine.leonardo.public(),
+            engine.seaart.public(),
+            engine.whisk.public(),
         ):
             data.append(
                 {

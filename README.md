@@ -1,6 +1,6 @@
 # Web2API Studio
 
-本地图片和视频生成网关，优先使用 Gemini 网页账号 1 和账号 2；两个账号都明确额度耗尽时，可以自动切换到付费的火山方舟 Seedream 5.0 Flash。另提供 Google Labs ImageFX、Bing Image Creator、Recraft Free plan、Leonardo Free plan、即梦、通义万相和 Hailuo 等网页连接器：填写用户自己的 Cookie / Token 后由本机请求第一方网页接口。即梦只使用网页赠送积分，通义万相只使用 `bonus` 奖励灵感值；其他平台会在界面标为候选或需要实测，不把网页入口当成固定免费额度。服务不自动登录、不处理 CAPTCHA/WAF，也不会把官方 API 额度伪装成网页免费额度。支持参考图编辑、批量任务、Gemini 文字对话和 HTTP API。Gemini 连接依赖 [HanaokaYuzu/Gemini-API](https://github.com/HanaokaYuzu/Gemini-API)（`gemini-webapi==2.1.1`）。
+本地图片和视频生成网关，优先使用 Gemini 网页账号 1 和账号 2；两个账号都明确额度耗尽时，可以自动切换到付费的火山方舟 Seedream 5.0 Flash。另提供 Google Labs ImageFX、Bing Image Creator、Recraft Free plan、Leonardo Free plan、SeaArt、即梦、通义万相和 Hailuo 等网页连接器：填写用户自己的 Cookie / Token 后由本机请求第一方网页接口。即梦只使用网页赠送积分，通义万相只使用 `bonus` 奖励灵感值，SeaArt 固定使用 `free_coins` / `temp_free_coins` / 试用桶；其他平台会在界面标为候选或需要实测，不把网页入口当成固定免费额度。服务不自动登录、不处理 CAPTCHA/WAF，也不会把官方 API 额度伪装成网页免费额度。支持参考图编辑、批量任务、Gemini 文字对话和 HTTP API。Gemini 连接依赖 [HanaokaYuzu/Gemini-API](https://github.com/HanaokaYuzu/Gemini-API)（`gemini-webapi==2.1.1`）。
 
 Seedream 是付费兜底，只有 Gemini 双账号明确返回额度耗尽时才会发起；认证失败、网络异常、内容拒绝等错误不会触发付费调用。火山方舟当前公开的 Seedream 5.0 Flash 输出单价为 ¥0.12/张，按成功生成的图片张数计费。任务历史会保存上游用量并显示费用估算；最终金额可能受账户折扣、资源包等影响，以火山方舟账单为准。自定义网站是配置能力，并不表示所有模型网站已经逐一验证。
 
@@ -28,9 +28,11 @@ Qwen 网页目前只列为候选：网页有文生图、图生图和文生视频
 |---|---|---|---|
 | Gemini Apps | 图片和文字基准 | Gemini 双账号 Cookie；生图、图生图、文字 | [官方帮助](https://support.google.com/gemini/answer/14286560?hl=en)说明图片模型有 daily quota；每次新请求都会重新探测账号 |
 | Google Labs ImageFX | Q3 / Q2 图片替代 | **适配器已接入 · 候选**；ImageFX / Imagen 网页文生图，Cookie 换短期 session token，不需要常驻浏览器 | [Google Labs ImageFX](https://labs.google/fx/tools/image-fx)是消费网页入口；免费额度、地区和模型权限由 Google 账号页面决定，Google 没有为该网页承诺固定每日 API 数量。此连接只使用用户自己的网页会话，不是 Gemini API Key |
+| Google Flow / Whisk | Q3 / Q2 图片替代候选（支持参考图的网页方向） | **旧 Whisk 适配器已标记迁移状态**；Whisk 当前跳转到 Flow，Flow 需要网页项目编辑器和浏览器会话，暂不作为稳定纯 HTTP 入口 | [Google Flow](https://flow.google.com/?from=whisk) 页面显示 credits 每日刷新；当前没有完成可复用的纯 HTTP 端到端验证，不把 Flow 宣称为 Web2API 免费接口，也不会绕过浏览器验证 |
 | Bing Image Creator | Q3 / Q2 图片替代 | **适配器已接入 · 候选**；Bing Image Creator 网页文生图，支持 DALL·E 3、GPT-4o、MAI Image | [Bing Image Creator](https://www.bing.com/images/create)使用微软账号自己的免费 Boost / 网页额度；速度和可用模型由账号、地区和页面状态决定，Boost 用尽后不宣称仍然免费 |
 | Recraft 网页 Free plan | Q3 / Q2 图片替代 | **适配器已接入 · 候选**；Recraft 网页文生图，默认 `gpt_image_2p5_flare`，不需要常驻浏览器 | [Recraft Free plan](https://www.recraft.ai/) 的 `plan.is_free` 和 `subscription_credits` 会在每次生成前校验；只使用可确认的免费订阅 credits，Free plan 图片公开展示且按 Recraft 规则限制商用 |
 | Leonardo 网页 Free plan | Q3 / Q2 图片替代 | **适配器已接入 · 候选**；Leonardo 网页文生图，不需要常驻浏览器 | [Leonardo](https://app.leonardo.ai/image-generation) 每次生成前核验 Free plan 和 `subscriptionTokens`；购买 Token、API credits 和非 Free plan 账户不会被使用；当前不接参考图 |
+| SeaArt 网页 | Q3 / Q2 图片替代 | **适配器已接入 · 免费桶字段明确 · 需账号实测**；SeaArt 网页文生图、单张参考图生图，不需要常驻浏览器 | [SeaArt](https://www.seaart.ai/) 的 `free_coins`、`temp_free_coins` 和 `try_out_limit` 会在提交前查询；固定使用 `speed_type=3`（免费生成），付费 `paid_coins` 不会使用；Token、网页模型 `model_no` 和可选固定 `device_id` 由用户在本机 JSON 中填写 |
 | 即梦 AI 网页 | Q3 / Q2 图片与视频替代 | **免费桶字段明确 · 需账号实测**；Seedream 5.0 Flash / Lite / 4.7 / 4.0 / 3.1；Seedance、HappyHorse、Wan；文生、参考图、首尾帧 | [官方网页](https://jimeng.jianying.com/)明确列出“平台免费积分：每日登录赠送积分”；只要 `gift_credit` 大于 0 就提交，购买/会员积分不会被主动使用，赠送积分为 0 时停止 |
 | 通义万相网页 | Q3 / Q2 图片与视频替代 | **免费桶字段明确 · 需账号实测**；Wan 2.7 / 2.6 / 2.5 / 2.2 / 2.1 / 3.0，文生图、参考图生图、文生视频、首尾帧 | [网页一方接口](https://tongyi.aliyun.com/wanxiang/)返回 `bonus`、`member`、`topUp` 三类灵感值；只使用 `bonus`，可自动尝试领取每日登录奖励，会员/充值桶不足以确认免费时不会提交 |
 | 豆包网页 | Q3 / Q2 图片与视频替代候选 | **实验性直连 · 候选**；网页对话、Seedance 2.0 文生视频和文生图；当前不接参考图 | [豆包网页](https://www.doubao.com/chat/)使用网页登录/赠送额度，但上游没有稳定公开免费桶分类。需要 Cookie、`device_id`、`web_id` 等用户自己的上下文；服务不生成设备指纹、不实现 WebMSSDK/X-Bogus、不处理 CAPTCHA，遇到验证会停止 |
@@ -43,11 +45,11 @@ Qwen 网页目前只列为候选：网页有文生图、图生图和文生视频
 
 | 结论 | 平台 | 原因 |
 |---|---|---|
-| 适配器已实现 | Gemini Apps、Google Labs ImageFX、Bing Image Creator、Recraft、Leonardo、即梦 AI、通义万相、Hailuo、豆包网页 | 有网页入口，能在不绕过登录/挑战的前提下使用用户提供的 Cookie 或网页 Token；是否有可用免费桶由每个平台状态字段和账号实测决定。豆包实验性直连要求用户提供网页上下文，遇到验证会停止 |
-| 已保留为网页候选 | Qwen 网页、Whisk、Ideogram、SeaArt、Freepik | 这些产品存在免费体验、积分或每日奖励的公开入口，但额度、地区或内部接口经常变化；Qwen 的图片/视频请求通常还需要网页风控字段。没有稳定的第一方字段协议前，不把它们标成“已接入免费 API”，也不会自动生成或绕过风控字段 |
+| 适配器已实现 | Gemini Apps、Google Labs ImageFX、Bing Image Creator、Recraft、Leonardo、即梦 AI、通义万相、Hailuo、豆包网页 | 有网页入口，能在不绕过登录/挑战的前提下使用用户提供的 Cookie 或网页 Token；是否有可用免费桶由平台状态字段和账号实测决定。豆包实验性直连要求用户提供网页上下文，遇到验证会停止 |
+| 已保留为网页候选 | Google Flow / Whisk、Qwen 网页、Ideogram、Freepik | 这些产品存在免费体验、积分或每日奖励的公开入口，但额度、地区、网页项目状态或内部接口经常变化；Flow 当前需要浏览器项目编辑器，Qwen 还会加载网页风控模块。没有稳定的第一方纯 HTTP 字段协议前，不把它们标成“已接入免费 API”，也不会自动生成或绕过风控字段 |
 | 不作为免费方案 | Gemini API、火山方舟、MiniMax API、Vidu API、百炼 API | 这些是开发者 API；网页会员/赠送积分不自动转成 API 免费额度 |
 
-手动选择平台时，图片建议先试 Gemini，再试 ImageFX、即梦、通义万相或 Hailuo；视频建议先试即梦，再试通义万相、Hailuo、PixVerse 或 Kling。跨平台不会自动切换；只有 Gemini 账号池按“账号 1 → 账号 2 → Seedream 兜底”自动路由。每个平台只会使用它明确标出的网页赠送桶；没有可确认的免费余额时直接返回额度错误，不会暗扣购买积分。
+手动选择平台时，图片建议先试 Gemini，再试 ImageFX、即梦、通义万相或 SeaArt；视频建议先试即梦，再试通义万相、Vidu 网页、Hailuo、PixVerse 或 Kling。跨平台不会自动切换；只有 Gemini 账号池按“账号 1 → 账号 2 → Seedream 兜底”自动路由。每个平台只会使用它明确标出的网页赠送桶；没有可确认的免费余额时直接返回额度错误，不会暗扣购买积分。
 
 ## 视频网页额度与官方 API
 
@@ -175,7 +177,7 @@ curl --max-time 600 http://127.0.0.1:8765/v1/images/generations \
 
 ### Pollinations 公共图片入口
 
-`pollinations` 不需要填写 Key，当前只开放公共 `sana` 文生图，可能受到共享限流；它不接受本地参考图。调用方仍需使用本地项目 Key：
+`pollinations` 不需要填写 Key，当前旧版公共入口只开放 `sana` 文生图，可能受到共享限流；它不接受本地参考图。调用方仍需使用本地项目 Key：
 
 ```sh
 curl --max-time 600 http://127.0.0.1:8765/v1/images/generations \
@@ -191,6 +193,8 @@ curl --max-time 600 http://127.0.0.1:8765/v1/images/generations \
     "response_format": "url"
   }'
 ```
+
+2026-10-26 实测：`https://image.pollinations.ai/models` 返回 `sana`，匿名请求可以返回图片；新版 `https://gen.pollinations.ai/image/...` 即使模型目录显示 `paid_only: false`，未带 Pollinations Key 仍返回 `401 UNAUTHORIZED`，并使用 Pollen 计价。因此新版模型不会被加入免费自动路径，也不会用它替换 Sana。
 
 在 **Gemini 账号 → 网页额度与平台连接** 中填写即梦 `sessionid`、通义万相完整 Cookie，或候选平台的网页 Token / Cookie；卡片会标出免费桶和验证状态，查询到的余额为 `0` 或未分类时不会提交。其他平台仍填写官方 Key。打开 **图片工作台** 可选择即梦 Seedream；打开 **视频工作台** 后，即梦支持首尾帧，Hailuo、MiniMax、Vidu 等按平台规则支持首尾帧或主体参考。任务记录会保存本地图片或 MP4。工作台调用本地管理接口，不需要额外填写项目 Key。
 
@@ -295,12 +299,13 @@ curl http://127.0.0.1:8765/v1/video/batches/vbatch_任务ID \
 7. 在 **网页额度与平台连接 → Bing Image Creator** 中，从 `bing.com` Cookie 复制 `_U` 的 Value，只填写值并保存。Bing 使用网页 Boost；额度耗尽或账号受限时会直接返回网页额度错误，不会偷偷切到付费 API。
 8. 在 **网页额度与平台连接 → Recraft 网页 Free plan** 中，从已登录网页请求的 `Authorization: Bearer ...` 复制 Token，只填写 Token 值并保存。每次生图前会查询 `/users/me`，只有 `plan.is_free=true` 且 `subscription_credits` 足够时才提交；购买/充值 credits 不会被使用。Free plan 图片可能公开展示，并按 Recraft 规则限制商用。
 9. 在 **网页额度与平台连接 → Leonardo 网页 Free plan** 中，从已登录网页请求的 `Authorization: Bearer ...` 复制 JWT，只填写 Token 值并保存。每次生图前会查询 GraphQL 的 Free plan 与 `subscriptionTokens`；只有免费订阅桶足够时才提交。Leonardo 当前只支持文生图，网页生成的图片可能公开展示。
-10. 在 **网页额度与平台连接 → 即梦 AI 网页** 中，从已登录的 `jimeng.jianying.com` Cookie 复制 `sessionid` 的 **Value**，只填写值并保存。页面可查询赠送、购买和会员余额；没有赠送积分时不会消耗付费积分。
-11. 在 **网页额度与平台连接 → 通义万相网页** 中粘贴已登录网页的完整 Cookie Header（必须含 `XSRF-TOKEN`），在 **Vidu 网页（Q3 / Q2 免费额度）** 中粘贴 `www.vidu.cn` 已登录会话的完整 Cookie Header，或在 **Hailuo / MiniMax 网页** 中填写 `hailuoai.video` 的 localStorage `_token`。通义只使用 `bonus`；Vidu 只在确认免费桶大于 0 时提交；Hailuo 只使用登录/订阅赠送桶，购买额度不会被自动消耗。Vidu 网页服务直接请求 `service.vidu.cn`，不需要浏览器持续打开。
+10. 在 **网页额度与平台连接 → SeaArt 网页** 中粘贴 JSON，例如 `{"token":"网页 Token","model_no":"网页模型 ID","model_ver_no":"可选版本 ID","device_id":"可选固定设备 ID"}`。Token 和 `model_no` 必填；`device_id` 只填写你正常网页会话已有的值，服务不会自动生成。提交前会查询 `free_coins`、`temp_free_coins` 和试用次数，固定走免费 `speed_type=3`，付费 coins 不会使用。
+11. 在 **网页额度与平台连接 → 即梦 AI 网页** 中，从已登录的 `jimeng.jianying.com` Cookie 复制 `sessionid` 的 **Value**，只填写值并保存。页面可查询赠送、购买和会员余额；没有赠送积分时不会消耗付费积分。
+12. 在 **网页额度与平台连接 → 通义万相网页** 中粘贴已登录网页的完整 Cookie Header（必须含 `XSRF-TOKEN`），在 **Vidu 网页（Q3 / Q2 免费额度）** 中粘贴 `www.vidu.cn` 已登录会话的完整 Cookie Header，或在 **Hailuo / MiniMax 网页** 中填写 `hailuoai.video` 的 localStorage `_token`。通义只使用 `bonus`；Vidu 只在确认免费桶大于 0 时提交；Hailuo 只使用登录/订阅赠送桶，购买额度不会被自动消耗。Vidu 网页服务直接请求 `service.vidu.cn`，不需要浏览器持续打开。
     豆包是实验性候选：在 **豆包网页** 的已登录请求中复制 Cookie、`device_id`、`web_id`（可连同 `fp`、`ms_token`、`tea_uuid`），在豆包卡片粘贴 JSON，例如 `{"cookie":"...","device_id":"...","web_id":"...","fp":"...","ms_token":"..."}`。这些值必须来自你自己的网页会话；本地服务不生成设备指纹、不实现 WebMSSDK/X-Bogus，也不绕过验证码。没有完整上下文或遇到验证挑战时任务会明确失败。
-12. 如需 Gemini 双账号额度耗尽后的付费兜底，在 **Seedream 5.0 Flash** 区域填写火山方舟 API Key 并保存。Key 保存在本机私有数据目录，不会回显。
-13. 在后台的 **项目与 Key** 区域填写项目名称，创建 Key 并复制保存。完整 Key 只显示一次。
-14. 你的项目填写 Base URL `http://127.0.0.1:8765/v1` 和刚生成的 Key，再将模型、提示词、尺寸等参数放入请求体。也可以在工作台选择参数，下载完整配置，交给附带的 Python 客户端读取。
+13. 如需 Gemini 双账号额度耗尽后的付费兜底，在 **Seedream 5.0 Flash** 区域填写火山方舟 API Key 并保存。Key 保存在本机私有数据目录，不会回显。
+14. 在后台的 **项目与 Key** 区域填写项目名称，创建 Key 并复制保存。完整 Key 只显示一次。
+15. 你的项目填写 Base URL `http://127.0.0.1:8765/v1` 和刚生成的 Key，再将模型、提示词、尺寸等参数放入请求体。也可以在工作台选择参数，下载完整配置，交给附带的 Python 客户端读取。
 
 图生图：在图片工作台点击 **添加图片**，看到缩略图后填写修改要求并提交。[Gemini Apps 文档](https://support.google.com/gemini/answer/14903178?hl=zh-Hans)说明一次提示最多可上传 10 个文件（视功能可用性而定）；本服务接受最多 10 张静态 PNG / JPEG / WebP 参考图，每张最大 100 MB、最多 2500 万像素，本次上传合计最多 100 MB。后两个尺寸限制是本地网关限制；官方帮助页对非视频文件给出的大小上限是 100 MB。批量模式的每一行提示词共用所选参考图。上传时只保存到本机，提交任务时才发送到所选平台；生成结果仍取决于账号和模型能力。
 
@@ -472,6 +477,25 @@ curl --max-time 1200 http://127.0.0.1:8765/v1/images/generations \
   }'
 ```
 
+Whisk 已迁移到 Google Flow。旧 `whisk-web` 适配器仅保留状态提示，不会提交生成任务；Flow 当前需要在网页项目编辑器中完成浏览器会话，暂不作为稳定纯 HTTP Provider。需要可复用的免费网页图片接口时，使用 Gemini、即梦或通义万相。
+
+```sh
+curl --max-time 1200 http://127.0.0.1:8765/v1/images/generations \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: flow-image-001' \
+  -d '{
+    "provider": "gemini",
+    "model": "gemini-pro",
+    "prompt": "一位穿红色外套的登山者站在雪山前，电影感自然光",
+    "n": 1,
+    "size": "1K",
+    "response_format": "url"
+  }'
+```
+
+上面的示例使用 Gemini 网页账号额度；Flow 的免费 credits 仍只能通过 Flow 网页项目确认，不能用旧 Whisk Cookie 直接替代。
+
 Recraft 网页 Free plan 示例（先在设置页保存 Bearer Token；服务只使用 `subscription_credits`）：
 
 ```sh
@@ -506,11 +530,30 @@ curl --max-time 1200 http://127.0.0.1:8765/v1/images/generations \
   }'
 ```
 
+SeaArt 网页免费桶示例（先在设置页保存 Token + `model_no` JSON；服务固定使用 `speed_type=3`）：
+
+```sh
+curl --max-time 1200 http://127.0.0.1:8765/v1/images/generations \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: seaart-image-001' \
+  -d '{
+    "provider": "seaart-web",
+    "model": "default",
+    "prompt": "白底陶瓷杯产品摄影，柔和自然光",
+    "n": 1,
+    "aspect_ratio": "1:1",
+    "response_format": "url"
+  }'
+```
+
+如果 SeaArt 返回的免费桶字段缺失或为 0，任务会在本机直接结束，不会尝试 `paid_coins`。
+
 把 `provider` 换成 `bing`、把 `model` 换成 `bing-dalle3`、`bing-gpt4o` 或 `bing-mai-image-1`，即可使用 Bing 网页额度。ImageFX 和 Bing 当前不接受本地参考图；需要上传参考图请使用 `gemini` 或 `jimeng-web`。
 
 | 参数 | 可选值与实际作用 |
 |---|---|
-| `provider` | 默认 `gemini`；可使用已配置的 `imagefx-web`、`bing`、`recraft-web`、`leonardo-web`、`jimeng-web`、`tongyi-web`、`hailuo-web`；Gemini 自动选择账号，Seedream 不作为请求 provider |
+| `provider` | 默认 `gemini`；可使用已配置的 `imagefx-web`、`bing`、`recraft-web`、`leonardo-web`、`seaart-web`、`jimeng-web`、`tongyi-web`、`hailuo-web`；旧 `whisk-web` 只返回迁移提示，不作为生成 provider。Gemini 自动选择账号，Seedream 不作为请求 provider |
 | `prompt` | 必填，1–16000 字符的非空提示词；`negative_prompt` 另有 16000 字符上限 |
 | `model` | Gemini 使用 `gemini-pro` / `default`；即梦和通义图片使用各自网页模型。`GET /v1/models?provider=...` 需调用 Key |
 | `n` | 1–4；串行生成，返回多张时复用已有结果，最多返回请求数量 |
@@ -648,9 +691,10 @@ curl http://127.0.0.1:8765/v1/jobs/img_任务ID \
 | `POST /v1/images/generations` | 等待生图并返回 URL / Base64 |
 | `POST /v1/jobs` | 提交异步生图任务（需调用 Key） |
 | `GET /api/video-providers` | 本地后台：视频平台、文档和配置状态，不回显 Key |
-| `GET /api/web-image-providers` | 本地后台：ImageFX / Bing / Recraft / Leonardo 网页图片平台状态，不回显凭据 |
-| `PUT /api/web-image-providers/{provider}` | 本地后台：保存 ImageFX Cookie/Token、Bing `_U` Cookie、Recraft 或 Leonardo Bearer Token |
-| `DELETE /api/web-image-providers/{provider}` | 本地后台：清除 ImageFX / Bing / Recraft / Leonardo 网页凭据 |
+| `GET /api/web-image-providers` | 本地后台：ImageFX / Bing / Recraft / Leonardo / SeaArt 网页图片平台状态，不回显凭据 |
+| `PUT /api/web-image-providers/{provider}` | 本地后台：保存网页图片凭据；SeaArt 使用 Token + `model_no` JSON |
+| `DELETE /api/web-image-providers/{provider}` | 本地后台：清除网页图片凭据 |
+| `GET /api/web-image-providers/seaart-web/credits` | 本地后台：查询 SeaArt 免费 coins / 试用桶，不回显 Token |
 | `PUT /api/video-providers/{provider}` | 本地后台：保存网页 session / Token / Cookie Header 或官方视频 API Key；即梦使用 `auth_type: web_session`，Kling 使用 `auth_type: web_cookie` |
 | `GET /api/video-providers/{provider}/credits` | 本地后台：查询 PixVerse、即梦或通义万相网页余额，不回显凭据 |
 | `POST /api/video/requests/preview` | 本地后台：校验视频参数，不提交上游任务 |
