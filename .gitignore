@@ -1,0 +1,11 @@
+.env
+client-config.json
+client-config.*.json
+!client-config.example.json
+.local/
+.venv/
+__pycache__/
+.pytest_cache/
+generated/*
+!generated/.gitkeep
+

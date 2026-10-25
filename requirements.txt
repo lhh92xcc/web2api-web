@@ -1,0 +1,8 @@
+gemini-webapi==2.1.1
+fastapi==0.146.0
+uvicorn==0.54.0
+python-dotenv==1.2.4
+python-multipart==0.0.32
+pillow==12.3.0
+oss2==2.19.1
+

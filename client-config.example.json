@@ -1,0 +1,16 @@
+{
+  "base_url": "http://127.0.0.1:8765/v1",
+  "api_key": "${GEMINI_WEB2API_KEY}",
+  "parameters": {
+    "provider": "gemini",
+    "model": "default",
+    "n": 1,
+    "prompt_mode": "enhanced",
+    "negative_prompt": "文字、水印、模糊",
+    "size": "2K",
+    "aspect_ratio": "16:9",
+    "full_size": true,
+    "response_format": "url",
+    "reference_images": []
+  }
+}

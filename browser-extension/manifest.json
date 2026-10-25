@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Web2API Studio · Browser Bridge",
+  "version": "2.0.1",
+  "description": "将你主动打开的模型网页连接到本机 Web2API Studio。只操作专用标签，不读取其他对话。",
+  "permissions": ["storage", "tabs", "scripting", "alarms"],
+  "host_permissions": ["http://127.0.0.1:8765/*"],
+  "optional_host_permissions": ["https://*/*", "http://127.0.0.1/*", "http://localhost/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Web2API Studio", "default_popup": "popup.html" }
+}
